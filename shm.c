@@ -8,19 +8,20 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-typedef union {
+typedef union
+{
     int val;
     struct semid_ds *buf;
-    unsigned short *array ;
+    unsigned short *array;
     struct seminfo *__buf;
-    void   *__pad ;
+    void *__pad;
 } semun;
 
 void sem_init(int sem_id, int sem_num, int init_valve)
 {
     semun sem_union;
     sem_union.val = init_valve;
-    if (semctl(sem_id, sem_num, SETVAL, sem_union))
+    if(semctl(sem_id, sem_num, SETVAL, sem_union))
     {
         perror("semctl");
         exit(-1);
@@ -33,7 +34,7 @@ void sem_release(int sem_id, int sem_num)
     sem_b.sem_num = sem_num;
     sem_b.sem_op = 1;
     sem_b.sem_flg = 0;
-    if (semop(sem_id, &sem_b, 1) == -1)
+    if(semop(sem_id, &sem_b, 1) == -1)
     {
         perror("sem_release");
         exit(-1);
@@ -46,7 +47,7 @@ void sem_reserve(int sem_id, int sem_num)
     sem_b.sem_num = sem_num;
     sem_b.sem_op = -1;
     sem_b.sem_flg = 0;
-    if (semop(sem_id, &sem_b, 1) == -1)
+    if(semop(sem_id, &sem_b, 1) == -1)
     {
         perror("sem_reserve");
         exit(-1);
@@ -55,8 +56,7 @@ void sem_reserve(int sem_id, int sem_num)
 
 double getdetlatimeofday(struct timeval *begin, struct timeval *end)
 {
-    return (end->tv_sec + end->tv_usec * 1.0 / 1000000) -
-           (begin->tv_sec + begin->tv_usec * 1.0 / 1000000);
+    return (end->tv_sec + end->tv_usec * 1.0 / 1000000) - (begin->tv_sec + begin->tv_usec * 1.0 / 1000000);
 }
 
 int main(int argc, char const *argv[])
@@ -72,7 +72,7 @@ int main(int argc, char const *argv[])
     int count, i, size;
     struct timeval begin, end;
 
-    if (argc != 3)
+    if(argc != 3)
     {
         printf("usage: ./shm <size> <count>\n");
         return 1;
@@ -83,15 +83,15 @@ int main(int argc, char const *argv[])
     unsigned char *buf = malloc(size);
 
     pid = fork();
-    if (pid == -1)
+    if(pid == -1)
     {
         perror("fork");
         return -1;
     }
-    else if (pid == 0) // parent
+    else if(pid == 0) // parent
     {
         sem_id = semget(SEM_KEY, 2, 0600 | IPC_CREAT);
-        if (sem_id == -1)
+        if(sem_id == -1)
         {
             perror("parent: semget");
             return -1;
@@ -100,19 +100,19 @@ int main(int argc, char const *argv[])
         sem_init(sem_id, READ_SEM, 0);
 
         shm_id = shmget(SHM_KEY, size, IPC_CREAT | 0600);
-        if (shm_id == -1)
+        if(shm_id == -1)
         {
             perror("parent: shmget");
             return -1;
         }
         void *addr = shmat(shm_id, NULL, 0);
-        if (addr == (void *)-1)
+        if(addr == (void *)-1)
         {
             perror("parent: shmat");
             return -1;
         }
 
-        for (i = 0; i < count; i++)
+        for(i = 0; i < count; i++)
         {
             sem_reserve(sem_id, READ_SEM);
             memcpy(buf, addr, size);
@@ -120,7 +120,7 @@ int main(int argc, char const *argv[])
             sem_release(sem_id, WRITE_SEM);
         }
 
-        if (shmdt(addr) == -1)
+        if(shmdt(addr) == -1)
         {
             perror("child: shmdt");
             return -1;
@@ -130,20 +130,20 @@ int main(int argc, char const *argv[])
     {
         sleep(1);
         sem_id = semget(SEM_KEY, 0, 0);
-        if (sem_id == -1)
+        if(sem_id == -1)
         {
             perror("child: semget");
             return -1;
         }
 
         shm_id = shmget(SHM_KEY, 0, 0);
-        if (shm_id == -1)
+        if(shm_id == -1)
         {
             perror("child: shmget");
             return -1;
         }
         void *addr = (int *)shmat(shm_id, NULL, 0);
-        if (addr == (void *)-1)
+        if(addr == (void *)-1)
         {
             perror("child: shmat");
             return -1;
@@ -151,7 +151,7 @@ int main(int argc, char const *argv[])
 
         gettimeofday(&begin, NULL);
 
-        for (i = 0; i < count; i++)
+        for(i = 0; i < count; i++)
         {
             sem_reserve(sem_id, WRITE_SEM);
             // *(int*)buf = i;
@@ -162,14 +162,12 @@ int main(int argc, char const *argv[])
         gettimeofday(&end, NULL);
 
         double tm = getdetlatimeofday(&begin, &end);
-        printf("%fMB/s %fmsg/s\n",
-               count * size * 1.0 / (tm * 1024 * 1024),
-               count * 1.0 / tm);
+        printf("%fMB/s %fmsg/s\n", count * size * 1.0 / (tm * 1024 * 1024), count * 1.0 / tm);
 
         sem_reserve(sem_id, WRITE_SEM);
         semun dummy = {0};
         semctl(sem_id, 0, IPC_RMID, dummy);
-        if (shmdt(addr) == -1)
+        if(shmdt(addr) == -1)
         {
             perror("shmdt");
             return -1;

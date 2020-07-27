@@ -18,7 +18,7 @@ help:
 	@echo '  ${YELLOW}make${RESET} ${GREEN}<target>${RESET} ${MAGENTA}[variable=value]${RESET}'
 	@echo ''
 	@echo 'Targets:'
-	@awk '/^[a-zA-Z\-\_0-9]+:/ { \
+	@awk '/^[a-zA-Z\-\0-9]+:/ { \
 		helpMessage = match(lastLine, /^## (.*)/); \
 		if (helpMessage) { \
 			helpCommand = substr($$1, 0, index($$1, ":")-1); \
@@ -26,10 +26,10 @@ help:
 			printf "  ${YELLOW}%-$(TARGET_MAX_CHAR_NUM)s${RESET} ${GREEN}%s${RESET}\n", helpCommand, helpMessage; \
 		} \
 	} \
-	{ lastLine = $$0 }' $(MAKEFILE_LIST)	
+	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
 .PHONY: all
-## Compile all 
+## Compile all
 all: $(TARGET)
 
 .PHONY: pipe
@@ -70,7 +70,7 @@ shm: shm.c
 .PHONY: test
 ## Run benchmark tests
 test:
-	./run_tests.sh
+	python2 run_test.py
 
 .PHONY: clean
 ## Clean build artifacts

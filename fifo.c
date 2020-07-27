@@ -6,20 +6,20 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-double
-getdetlatimeofday(struct timeval *begin, struct timeval *end)
+double getdetlatimeofday(struct timeval *begin, struct timeval *end)
 {
-    return (end->tv_sec + end->tv_usec * 1.0 / 1000000) -
-           (begin->tv_sec + begin->tv_usec * 1.0 / 1000000);
+    return (end->tv_sec + end->tv_usec * 1.0 / 1000000) - (begin->tv_sec + begin->tv_usec * 1.0 / 1000000);
 }
 
-int main(int argc, char *argv[]) {
-    int              fd;
-    int              i, size, count, sum, n;
-    char            *buf;
-    struct timeval   begin, end;
+int main(int argc, char *argv[])
+{
+    int fd;
+    int i, size, count, sum, n;
+    char *buf;
+    struct timeval begin, end;
 
-    if (argc != 3) {
+    if(argc != 3)
+    {
         printf("usage: ./fifo <size> <count>\n");
         return 1;
     }
@@ -28,28 +28,34 @@ int main(int argc, char *argv[]) {
     count = atoi(argv[2]);
 
     buf = malloc(size);
-    if (buf == NULL) {
+    if(buf == NULL)
+    {
         perror("malloc");
         return 1;
     }
 
     unlink("./fifo-ipc");
-    if (mkfifo("./fifo-ipc", 0700) == -1) {
+    if(mkfifo("./fifo-ipc", 0700) == -1)
+    {
         perror("mkfifo");
         return 1;
     }
 
     fd = open("./fifo-ipc", O_RDWR);
-    if (fd == -1) {
+    if(fd == -1)
+    {
         perror("open");
         return 1;
     }
 
-    if (fork() == 0) {
+    if(fork() == 0)
+    {
         sum = 0;
-        for (i = 0; i < count; i++) {
+        for(i = 0; i < count; i++)
+        {
             n = read(fd, buf, size);
-            if (n == -1) {
+            if(n == -1)
+            {
                 perror("read");
                 return 1;
             }
@@ -57,16 +63,20 @@ int main(int argc, char *argv[]) {
             sum += n;
         }
 
-        if (sum != count * size) {
+        if(sum != count * size)
+        {
             fprintf(stderr, "sum error: %d != %d\n", sum, count * size);
             return 1;
         }
-
-    } else {
+    }
+    else
+    {
         gettimeofday(&begin, NULL);
 
-        for (i = 0; i < count; i++) {
-            if (write(fd, buf, size) != size) {
+        for(i = 0; i < count; i++)
+        {
+            if(write(fd, buf, size) != size)
+            {
                 perror("wirte");
                 return 1;
             }
@@ -74,9 +84,7 @@ int main(int argc, char *argv[]) {
         gettimeofday(&end, NULL);
 
         double tm = getdetlatimeofday(&begin, &end);
-        printf("%.0fMB/s %.0fmsg/s\n",
-            count * size * 1.0 / (tm * 1024 * 1024),
-            count * 1.0 / tm);
+        printf("%.0fMB/s %.0fmsg/s\n", count * size * 1.0 / (tm * 1024 * 1024), count * 1.0 / tm);
     }
 
     return 0;
